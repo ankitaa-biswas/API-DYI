@@ -1,17 +1,23 @@
 import express from "express";
 import bodyParser from "body-parser";
+import dotenv from "dotenv";
 
+
+dotenv.config()
 const app = express();
 const port = 3000;
-const masterKey = "4VGP2DN-6EWM4SJ-N6FGRHV-Z3PR3TT";
+const masterKey = process.env.MASTER_KEY;
+
 
 app.use(bodyParser.urlencoded({ extended: true }));
+
 
 //1. GET a random joke
 app.use("/random",(res,req)=>{
   const randomIndex=Math.floor(Math.random()*jokes.length);
   res.json(jokes[randomIndex]);
 })
+
 
 //2. GET a specific joke
 app.get("/jokes/:id",(res,req)=>{
@@ -29,14 +35,78 @@ app.get("/filter",(req, res) => {
 });
 
 //4. POST a new joke
+app.post("/jokes", (req,res)=>{
+  const newJoke={
+    id:jokes.length+1,
+    jokeText:req.body.text,
+    jokeType:req.body.type,
+
+
+  };
+  jokes.push(newJoke);
+  console.log(jokes.slice(-1))
+  res.json(newJoke);
+})
+
+
 
 //5. PUT a joke
 
+app.put("/jokes/:id",(req,res)=>{
+  const id=parseInt(req.params.id);
+  const replacementJoke={
+    id:id,
+    jokeText:req.body.text,
+    jokeType:req.body.type,
+  };
+  const searchIndex=jokes.findIndex((joke)=>jokes.id===id);
+  jokes[searchIndex]=replacementJoke;
+  res.json(replacementJoke);
+})
+
 //6. PATCH a joke
+app.patch("/jokes/:id",(req,res)=>{
+  const id=parseInt(req.params.id);
+  const existingJoke=jokes.find((joke)=>joke.id===id);
+  const replacementJoke ={
+    id:i,
+    jokeText:req.body.text||existingJoke.jokeText,
+    jokeType:req.body.type||existingJoke.jokeType,
+
+  };
+  const searchIndex=jokes.findIndex((joke)=>joke.id===id);
+  jokes[searchIndex]=replacementJoke;
+  res.json(replacementJoke);
+
+
+})
 
 //7. DELETE Specific joke
+app.delete("/jokes/:id",(req,res)=>{
+  const id=parseInt(req.params.id);
+  const searchIndex=jokes.findIndex((joke)=>joke.id===id);
+  if(searchIndex>-1){
+    jokes.splice(searchIndex,1);
+    res.status(200);
+  }
+  else{
+    res.status.json({error:`joke with id ${id} not found.no jokes were deleted`});
+  }
+});
+
 
 //8. DELETE All jokes
+
+app.delete("/all",(req,res)=>{
+  const userKey=req.query.key;
+if(userKey===masterKey){
+jokes=[]
+;
+res.sendStatus(200);
+}else{
+  res.status(4004).json({error:`sorry you dont have that authentication`})
+}
+})
 
 app.listen(port, () => {
   console.log(`Successfully started server on port ${port}.`);
